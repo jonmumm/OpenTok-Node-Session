@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<title>OpenTok Node.js</title>
+	
+	<script src="http://cdn.socket.io/stable/socket.io.js" type="text/javascript"></script>
+	<script src="http://jonmumm.github.com/OpenTok-JS-LayoutContainer/OT_LayoutContainer.js" type="text/javascript"></script>
+	<script src="http://staging.tokbox.com/v0.91/js/TB.min.js" type="text/javascript" ></script>
+	<script src="OT_Widget.js" type="text/javascript" ></script>
+	
+	<script>
+		var socket = new io.Socket(null, {port: 3000, rememberTransport: false});
+		socket.on("message",messageHandler);
+		socket.connect();
+		
+		function messageHandler(message) {	
+			var opentok_info = message;
+			
+			OT_Widget.startWidget("widgetContainer", 700, 400, 
+				opentok_info.apiKey, opentok_info.sessionId, opentok_info.token);
+		}
+	</script>
+</head>
+
+<body>
+	<div id="widgetContainer"></div>
+
+</body>
+</html>
