@@ -7,7 +7,7 @@ var connect = require('connect'),
 var server = connect(
 	connect.static(__dirname + "/web")
 );
-server.listen(3000); // Start server on port 5001
+server.listen(3000); // Start server on port 3000
 
 // Set up Socket listener and initialize event handlers
 var socket = io.listen(server);
