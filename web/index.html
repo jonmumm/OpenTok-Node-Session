@@ -12,6 +12,7 @@
 	<script src="OT_Widget.js" type="text/javascript" ></script>
 	
 	<script>
+		// Initialize the socket, set up event handler, and connect
 		var socket = new io.Socket(null, {port: 3000, rememberTransport: false});
 		socket.on("message",messageHandler);
 		socket.connect();
@@ -27,6 +28,5 @@
 
 <body>
 	<div id="widgetContainer"></div>
-
 </body>
 </html>
