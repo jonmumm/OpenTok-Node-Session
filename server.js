@@ -1,12 +1,14 @@
 // Import the Node modules we need
 var connect = require('connect'),
 	io = require('socket.io'),
+	http = require('http'),
 	opentok = require('opentok');
 
 // Set up the HTTP server for serving our static fiels
-var server = connect(
+var app = connect(
 	connect.static(__dirname + "/web")
 );
+var server = http.createServer(app);
 server.listen(3000); // Start server on port 3000
 
 // Set up Socket listener and initialize event handlers
