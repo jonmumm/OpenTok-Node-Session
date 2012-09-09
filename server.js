@@ -1,17 +1,19 @@
 // Import the Node modules we need
 var connect = require('connect'),
 	io = require('socket.io'),
+	http = require('http'),
 	opentok = require('opentok');
 
 // Set up the HTTP server for serving our static fiels
-var server = connect(
+var app = connect(
 	connect.static(__dirname + "/web")
 );
-server.listen(3000); // Start server on port 3000
+var server = http.createServer(app);
+server.listen(3000); // Start server on port 3001
 
 // Set up Socket listener and initialize event handlers
 var socket = io.listen(server);
-socket.on('connection', function(client) {
+socket.sockets.on('connection', function(client) {
 	
 	// When a client connects, figure out which session to join
 	getSession(client);
@@ -23,8 +25,8 @@ socket.on('connection', function(client) {
 });
 
 // OpenTok Variables
-var OPENTOK_API_KEY = '413302',		// Replace with your API key
-	OPENTOK_API_SECRET = 'fc512f1f3c13e3ec3f590386c986842f92efa7e7',		// Replace with your API secret
+var OPENTOK_API_KEY = '15943661',		// Replace with your API key
+	OPENTOK_API_SECRET = 'e0ee51f8ff4912a3867344250d4181e4e1a047a3',		// Replace with your API secret
 
 	// OpenTok SDK
 	ot = new opentok.OpenTokSDK(OPENTOK_API_KEY, OPENTOK_API_SECRET),
@@ -39,8 +41,8 @@ var OPENTOK_API_KEY = '413302',		// Replace with your API key
 
 // Finds an available session for the client to connect to
 function getSession(client) {
-	
-	var session;
+
+	var session;	
 	// Look through all sessions to find a session that has less than the max number of sessions
 	// NOTE: We start searching from the top of the array since it is more likely a non-full session is there
 	for (var i = ot_sessions.length - 1; i >= 0; i--) {
@@ -50,12 +52,11 @@ function getSession(client) {
 			break;
 		}
 	}
-	
+
 	if (!session) {
 		// If we didn't find a session, generate one and enter it
-		ot.createSession('localhost',{},function(session) {
-			ot_sessions.push(session);
-			enterSession(session,client);
+		ot.create_session('localhost', {}, function(sessionId) {
+			enterSession(ot_sessions[ot_sessions.push({session: sessionId})-1], client);
 		})
 	} else {
 		// Otherwise enter the session we found
@@ -64,20 +65,21 @@ function getSession(client) {
 }
 
 // Sends the session info back to the client for the client to join
-function enterSession(session, client) {
+function enterSession (session, client) {
 	// Construct info object to pass back to client then send it
+	console.log("[SESSION]",session);
 	var opentok_info = {
-		sessionId: session.sessionId,
+		sessionId: session.session,
 		apiKey: OPENTOK_API_KEY,
 		token: ot.generateToken()
 	}
-	client.send(opentok_info);
-	
+	client.emit('opentok_info', opentok_info);
+
 	// Create array to hold all the clients in the session
 	if (!session.clients) {
 		session.clients = new Array();
 	}
-	
+
 	// Add the client to the session
 	session.clients.push(client.sessionId);
 	session_map[client.sessionId] = session;	// Use map later to identify what session client was in
@@ -85,6 +87,7 @@ function enterSession(session, client) {
 
 // Finds which session the client was in and removes the client from that session.
 function leaveSession(client) {
+
 	// Find the session that the client was in
 	var session = session_map[client.sessionId];
 	
