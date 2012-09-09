@@ -39,50 +39,61 @@ var OPENTOK_API_KEY = '15943661',		// Replace with your API key
  	session_map = {},				// Hash for getting the session of a given client
 	ot_sessions = new Array();		// Array for holding all sessions we have generated
 
-var session;
 // Finds an available session for the client to connect to
 function getSession(client) {
-	
+
+	var session;	
+	// Look through all sessions to find a session that has less than the max number of sessions
+	// NOTE: We start searching from the top of the array since it is more likely a non-full session is there
+	for (var i = ot_sessions.length - 1; i >= 0; i--) {
+		var tmp_session = ot_sessions[i];
+		if (tmp_session.clients.length < MAX_SESSION_CONNECTIONS) {
+			session = tmp_session;
+			break;
+		}
+	}
+
 	if (!session) {
 		// If we didn't find a session, generate one and enter it
 		ot.create_session('localhost', {}, function(sessionId) {
-			session = sessionId;
-			enterSession(session, client);
+			enterSession(ot_sessions[ot_sessions.push({session: sessionId})-1], client);
 		})
 	} else {
 		// Otherwise enter the session we found
 		enterSession(session, client);
 	}	
 }
-var clients;
+
 // Sends the session info back to the client for the client to join
 function enterSession (session, client) {
 	// Construct info object to pass back to client then send it
+	console.log("[SESSION]",session);
 	var opentok_info = {
-		sessionId: session,
+		sessionId: session.session,
 		apiKey: OPENTOK_API_KEY,
 		token: ot.generateToken()
 	}
 	client.emit('opentok_info', opentok_info);
 
 	// Create array to hold all the clients in the session
-	if (!clients) {
-		clients = new Array();
+	if (!session.clients) {
+		session.clients = new Array();
 	}
 
 	// Add the client to the session
-	clients.push(client.sessionId);
+	session.clients.push(client.sessionId);
 	session_map[client.sessionId] = session;	// Use map later to identify what session client was in
 }
 
 // Finds which session the client was in and removes the client from that session.
 function leaveSession(client) {
+
 	// Find the session that the client was in
 	var session = session_map[client.sessionId];
 	
 	// Find the position of the client in the session
-	var index = clients.indexOf(client.sessionId);
+	var index = session.clients.indexOf(client.sessionId);
 	
 	// Remove the client from the session
-	clients.splice(index, 1);
+	session.clients.splice(index, 1);
 }
